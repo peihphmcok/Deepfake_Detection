@@ -1,12 +1,12 @@
+# 5
+
 import os
 import csv
 import shutil
 
-# File mapping từ mel → video
-CSV_PATH = r"D:\Deepfake_Detection_project\data_preprocessing\fakeavceleb_audio\mel_to_video_mapping_clean.csv"
-
-# Output thư mục
-BASE_OUT = r"D:\Deepfake_Detection_project\data_preprocessing\fakeavceleb_audios_videos"
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+CSV_PATH = os.path.join(PROJECT_ROOT, "data_preprocessing", "fakeavceleb_audio", "mel_to_video_mapping_clean.csv")
+BASE_OUT = os.path.join(PROJECT_ROOT, "data_preprocessing", "fakeavceleb_audios_videos")
 AUDIO_OUT = os.path.join(BASE_OUT, "audio")
 VIDEO_OUT = os.path.join(BASE_OUT, "video")
 

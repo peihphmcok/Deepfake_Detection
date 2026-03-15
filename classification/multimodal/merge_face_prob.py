@@ -27,8 +27,8 @@ def save_aggregated_probs(aggregated_df, output_file):
 
 # Hàm chính
 def main():
-    input_file = "output/output_face/face_frame_predictions.csv"
-    output_file = "output/output_face/aggregated_face_probs.csv"
+    input_file = "C:/Personal/df/classification/multimodal/output/output_face/face_frame_predictions.csv"
+    output_file = "C:/Personal/df/classification/multimodal/output/output_face/aggregated_face_probs.csv"
 
     # Tính xác suất tổng
     aggregated_df = load_and_aggregate_face_probs(input_file)

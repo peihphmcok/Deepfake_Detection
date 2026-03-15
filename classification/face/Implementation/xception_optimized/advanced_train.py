@@ -50,9 +50,11 @@ class FocalLoss(nn.Module):
 torch.cuda.empty_cache()
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 
-DATA_PATH = "/workspace/Deepfake_Detection/data_preprocessing/ff_labels"
-MODEL_PATH = "/workspace/Deepfake_Detection/classification/face/models/model_advanced_xception"
-OUTPUT_PATH = "/workspace/Deepfake_Detection/classification/face/output/output_advanced_xception"
+# Project root (5 levels up from xception_optimized/)
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".."))
+DATA_PATH = os.path.join(_PROJECT_ROOT, "data_preprocessing", "ff_labels")
+MODEL_PATH = os.path.join(_PROJECT_ROOT, "classification", "face", "models", "model_advanced_xception")
+OUTPUT_PATH = os.path.join(_PROJECT_ROOT, "classification", "face", "output", "output_advanced_xception")
 BATCH_SIZE = 48
 NUM_WORKERS = 8
 LEARNING_RATE = 2e-4

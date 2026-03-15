@@ -1,3 +1,5 @@
+# 1
+
 import os
 import shutil
 import moviepy.editor as mp
@@ -9,17 +11,22 @@ import cv2
 from tqdm import tqdm
 from multiprocessing import Pool
 
-root_dir = "D:/Deepfake_Detection_project/data/FakeAVCeleb_v1.2"
-output_dir = "/data_preprocessing/fakeavceleb_audio_dup"
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+root_dir = os.path.join(PROJECT_ROOT, "data", "FakeAVCeleb_v1.2")
+output_dir = os.path.join(PROJECT_ROOT, "data_preprocessing", "fakeavceleb_audio_dup")
 os.makedirs(output_dir, exist_ok=True)
 
 def process_video(args):
     video_path, output_path = args
     try:
+        # Nếu file đã tồn tại thì bỏ qua
+        if os.path.exists(output_path):
+            return f"Skipped (exists): {output_path}"
+
         # Extract audio from video
         video = mp.VideoFileClip(video_path)
         audio_path = f"temp_audio_{os.getpid()}.wav"
-        video.audio.write_audiofile(audio_path)
+        video.audio.write_audiofile(audio_path, verbose=False, logger=None)
         video.close()
 
         # Load audio
@@ -43,9 +50,10 @@ def process_video(args):
 
         # Clean up
         os.remove(audio_path)
-        print(f"Spectrogram saved to: {output_path}")
+        return f"Processed: {output_path}"
+
     except Exception as e:
-        print(f"Error processing {video_path}: {e}")
+        return f"Error processing {video_path}: {e}"
 
 def main():
     video_tasks = []
@@ -65,11 +73,19 @@ def main():
                             output_subdir = os.path.join(output_dir, category.replace("-", "_"), race, gender, id_folder)
                             os.makedirs(output_subdir, exist_ok=True)
                             output_path = os.path.join(output_subdir, f"{file.replace('.mp4', '.png')}")
-                            video_tasks.append((video_path, output_path))
+                            # ✅ Bỏ qua nếu đã có file
+                            if not os.path.exists(output_path):
+                                video_tasks.append((video_path, output_path))
+
+    print(f"Found {len(video_tasks)} videos to process.")
 
     # Process videos in parallel
-    with Pool(processes=6) as pool:
-        list(tqdm(pool.imap(process_video, video_tasks), total=len(video_tasks)))
+    if video_tasks:
+        with Pool(processes=6) as pool:
+            for result in tqdm(pool.imap_unordered(process_video, video_tasks), total=len(video_tasks)):
+                print(result)
+    else:
+        print("All videos already processed!")
 
 if __name__ == "__main__":
     main()

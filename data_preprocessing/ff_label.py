@@ -1,9 +1,9 @@
 import os
 import pandas as pd
 
-# Configuration
-OUTPUT_DIR = "D:/Deepfake_Detection_project/data_preprocessing/ff_frames"
-LABELS_PATH = "D:/Deepfake_Detection_project/data_preprocessing/ff_labels/labels.csv"
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, "data_preprocessing", "ff_frames")
+LABELS_PATH = os.path.join(PROJECT_ROOT, "data_preprocessing", "ff_labels", "labels.csv")
 
 def create_labels():
     """Create labels CSV from frame directories."""

@@ -1,12 +1,15 @@
+# 2
+
 import os
 import shutil
 import hashlib
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
-DATA_DIR = "D:/Deepfake_Detection_project/data_preprocessing/fakeavceleb_audio_dup"
-OUTPUT_DIR = "D:/Deepfake_Detection_project/data_preprocessing/fakeavceleb_audio"
-TEMP_DIR = "D:/Deepfake_Detection_project/data_preprocessing/temp"
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+DATA_DIR = os.path.join(PROJECT_ROOT, "data_preprocessing", "fakeavceleb_audio_dup")
+OUTPUT_DIR = os.path.join(PROJECT_ROOT, "data_preprocessing", "fakeavceleb_audio")
+TEMP_DIR = os.path.join(PROJECT_ROOT, "data_preprocessing", "temp")
 os.makedirs(TEMP_DIR, exist_ok=True)
 
 def compute_md5(file_path):

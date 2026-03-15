@@ -95,7 +95,7 @@ class Xception(nn.Module):
         self.bn3 = nn.BatchNorm2d(1536)
         self.conv4 = SeparableConv2d(1536, 2048, 3, 1, 1)
         self.bn4 = nn.BatchNorm2d(2048)
-        self.last_linear = nn.Linear(2048, num_classes)  # Sử dụng last_linear thay vì fc
+        self.last_linear = nn.Linear(2048, num_classes)
 
     def forward(self, x):
         x = self.conv1(x)
@@ -124,22 +124,20 @@ class Xception(nn.Module):
         x = self.relu(x)
         x = F.adaptive_avg_pool2d(x, (1, 1))
         x = x.view(x.size(0), -1)
-        x = self.last_linear(x)  # Sử dụng last_linear thay vì fc
+        x = self.last_linear(x)
         return x
 
 def xception(num_classes=1000, pretrained='imagenet'):
     if pretrained is not None:
         settings = pretrained_settings['xceptionnet_paper'][pretrained]
-        model = Xception(num_classes=1000)  # Tạo mô hình với 1000 lớp để tải trọng số
+        model = Xception(num_classes=1000)
         state_dict = model_zoo.load_url(settings['url'])
-        # Tái định dạng pointwise.weight từ 2D sang 4D
+        # Reshape pointwise.weight from 2D to 4D for loading ImageNet weights
         for k in list(state_dict.keys()):
             if 'pointwise.weight' in k and len(state_dict[k].shape) == 2:
                 out_channels, in_channels = state_dict[k].shape
                 state_dict[k] = state_dict[k].view(out_channels, in_channels, 1, 1)
-        # Tải trọng số với strict=False để bỏ qua lỗi ở lớp cuối
         model.load_state_dict(state_dict, strict=False)
-        # Điều chỉnh lớp cuối thành num_classes được yêu cầu
         model.last_linear = nn.Linear(model.last_linear.in_features, num_classes)
         model.input_space = settings['input_space']
         model.input_size = settings['input_size']

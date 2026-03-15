@@ -1,9 +1,11 @@
+# 3
+
 import os
 import csv
 
-# Thư mục gốc
-MEL_ROOT = r"D:\Deepfake_Detection_project\data_preprocessing\fakeavceleb_audio"
-VIDEO_ROOT = r"D:\Deepfake_Detection_project\data\FakeAVCeleb_v1.2"
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+MEL_ROOT = os.path.join(PROJECT_ROOT, "data_preprocessing", "fakeavceleb_audio")
+VIDEO_ROOT = os.path.join(PROJECT_ROOT, "data", "FakeAVCeleb_v1.2")
 
 # Chuyển đổi tên dataset từ "_" sang "-"
 NAME_MAP = {

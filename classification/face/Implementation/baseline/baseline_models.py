@@ -7,7 +7,7 @@ class XceptionBaseline(nn.Module):
     def __init__(self, num_classes=1, dropout_rate=0.5):
         super(XceptionBaseline, self).__init__()
         self.model = timm.create_model('xception', pretrained=True, num_classes=num_classes)
-        self.classifier_name = 'fc'  # Tên classifier trong timm Xception
+        self.classifier_name = 'fc'
     def forward(self, x):
         return self.model(x)
 
@@ -51,7 +51,6 @@ class ShuffleNetV2Baseline(nn.Module):
     def forward(self, x):
         return self.model(x)
 
-# Model factory functions
 def create_xception_baseline(dropout_rate=0.5):
     return XceptionBaseline(num_classes=1, dropout_rate=dropout_rate)
 
@@ -67,27 +66,26 @@ def create_resnet18_baseline(dropout_rate=0.5):
 def create_shufflenet_v2_baseline(dropout_rate=0.5):
     return ShuffleNetV2Baseline(num_classes=1, dropout_rate=dropout_rate)
 
-# Model configuration
 BASELINE_MODELS = {
     'mobilenetv3_large': {
         'model_fn': create_mobilenetv3_baseline,
         'name': 'MobileNetV3-Large',
         'description': 'Original MobileNetV3-Large architecture',
-        'normalization': ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),  # ImageNet
+        'normalization': ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
         'classifier_name': 'classifier'
     },
     'resnet18': {
         'model_fn': create_resnet18_baseline,
         'name': 'ResNet18',
         'description': 'Original ResNet18 architecture',
-        'normalization': ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),  # ImageNet
+        'normalization': ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
         'classifier_name': 'fc'
     },
     'shufflenet_v2': {
         'model_fn': create_shufflenet_v2_baseline,
         'name': 'ShuffleNet V2',
         'description': 'Original ShuffleNet V2 architecture',
-        'normalization': ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),  # ImageNet
+        'normalization': ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
         'classifier_name': 'fc'
     },
 
@@ -95,7 +93,7 @@ BASELINE_MODELS = {
         'model_fn': create_efficientnet_b0_baseline,
         'name': 'EfficientNet-B0',
         'description': 'Original EfficientNet-B0 architecture',
-        'normalization': ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),  # ImageNet
+        'normalization': ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
         'classifier_name': 'classifier'
     },
 
@@ -103,7 +101,7 @@ BASELINE_MODELS = {
         'model_fn': create_xception_baseline,
         'name': 'Xception',
         'description': 'Original Xception architecture',
-        'normalization': ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),  # ImageNet
+        'normalization': ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
         'classifier_name': 'fc'
     },
 }

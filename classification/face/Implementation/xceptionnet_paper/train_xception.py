@@ -16,16 +16,17 @@ from sklearn.metrics import (accuracy_score, f1_score, roc_auc_score, matthews_c
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from torch.cuda.amp import autocast, GradScaler  # Added for AMP
+from torch.cuda.amp import autocast, GradScaler
 
-from Deepfake_Detection.classification.face.Implementation.advanced_transforms import DeepfakeDataset, train_transform, val_test_transform
-from xception import xception
+from classification.face.Implementation.advanced_transforms import DeepfakeDataset, train_transform, val_test_transform
+from .xception import xception
 
-# Configuration
+# Project root (4 levels up from xceptionnet_paper/)
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 CONFIG = {
-    'data_path': "G:/Hiep/Deepfake_Detection/data_preprocessing/output_split",
-    'model_path': "G:/Hiep/Deepfake_Detection/classification/face/models/model_xception_paper",
-    'output_path': "G:/Hiep/Deepfake_Detection/classification/face/output/output_xception_paper",
+    'data_path': os.path.join(_PROJECT_ROOT, "data_preprocessing", "ff_labels"),
+    'model_path': os.path.join(_PROJECT_ROOT, "classification", "face", "models", "model_xception_paper"),
+    'output_path': os.path.join(_PROJECT_ROOT, "classification", "face", "output", "output_xception_paper"),
     'batch_size': 16,
     'num_workers': 4,
     'learning_rate': 2e-4,
@@ -73,30 +74,28 @@ def calculate_metrics(y_true, y_pred_prob, threshold=0.5):
         'true_positives': tp
     }
 
-def train_epoch(model, dataloader, criterion, optimizer, scaler, device):  # Added scaler
+def train_epoch(model, dataloader, criterion, optimizer, scaler, device):
     model.train()
     running_loss = 0.0
-    all_preds, all_labels = [], []  # Fixed: separated initialization
+    all_preds, all_labels = [], []
 
     progress_bar = tqdm(dataloader, desc='Training', leave=False)
     for images, labels, _ in progress_bar:
         images, labels = images.to(device), labels.to(device).float().unsqueeze(1)
         optimizer.zero_grad()
 
-        with autocast():  # Enable mixed precision
+        with autocast():
             outputs = model(images)
             loss = criterion(outputs, labels)
 
-        scaler.scale(loss).backward()  # Scale loss for mixed precision
-        scaler.step(optimizer)  # Update optimizer with scaled gradients
-        scaler.update()  # Update scaler for next iteration
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
 
         running_loss += loss.item() * images.size(0)
         preds = torch.sigmoid(outputs).detach().cpu().numpy()
         all_preds.extend(preds.flatten())
         all_labels.extend(labels.cpu().numpy().flatten())
-
-        # Update progress bar with current loss
         current_loss = running_loss / (len(all_preds) * images.size(0) / len(images))
         progress_bar.set_postfix({'loss': f'{current_loss:.4f}'})
 
@@ -113,7 +112,7 @@ def validate_epoch(model, dataloader, criterion, device):
     with torch.no_grad():
         for images, labels, _ in progress_bar:
             images, labels = images.to(device), labels.to(device).float().unsqueeze(1)
-            with autocast():  # Enable mixed precision
+            with autocast():
                 outputs = model(images)
                 loss = criterion(outputs, labels)
 
@@ -122,7 +121,6 @@ def validate_epoch(model, dataloader, criterion, device):
             all_preds.extend(preds.flatten())
             all_labels.extend(labels.cpu().numpy().flatten())
 
-            # Update progress bar with current loss
             current_loss = running_loss / (len(all_preds) * images.size(0) / len(images))
             progress_bar.set_postfix({'loss': f'{current_loss:.4f}'})
 
@@ -131,7 +129,6 @@ def validate_epoch(model, dataloader, criterion, device):
     return epoch_loss, metrics
 
 def save_plots(history, test_metrics, y_true, y_pred_prob, output_path, model_name):
-    # Training history
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
     axes[0, 0].plot(history['train_loss'], 'b-', label='Train')
     axes[0, 0].plot(history['val_loss'], 'r-', label='Val')
@@ -162,7 +159,6 @@ def save_plots(history, test_metrics, y_true, y_pred_prob, output_path, model_na
     plt.savefig(f"{output_path}/training_history.png", dpi=300, bbox_inches='tight')
     plt.close()
 
-    # Confusion matrix
     plt.figure(figsize=(6, 4))
     sns.heatmap(test_metrics['confusion_matrix'], annot=True, fmt='d', cmap='Blues',
                 xticklabels=['Real', 'Fake'], yticklabels=['Real', 'Fake'])
@@ -171,7 +167,6 @@ def save_plots(history, test_metrics, y_true, y_pred_prob, output_path, model_na
     plt.savefig(f"{output_path}/confusion_matrix.png", dpi=300, bbox_inches='tight')
     plt.close()
 
-    # ROC curve
     fpr, tpr, _ = roc_curve(y_true, y_pred_prob)
     auc = roc_auc_score(y_true, y_pred_prob)
     plt.figure(figsize=(6, 4))
@@ -186,7 +181,6 @@ def save_plots(history, test_metrics, y_true, y_pred_prob, output_path, model_na
     plt.savefig(f"{output_path}/roc_curve.png", dpi=300, bbox_inches='tight')
     plt.close()
 
-    # PR curve
     precision, recall, _ = precision_recall_curve(y_true, y_pred_prob)
     ap = average_precision_score(y_true, y_pred_prob)
     plt.figure(figsize=(6, 4))
@@ -209,7 +203,7 @@ def analyze_misclassifications(model, test_loader, device, output_path, model_na
         for images, labels, paths in progress_bar:
             images = images.to(device)
             labels_np = labels.numpy()
-            with autocast():  # Enable mixed precision
+            with autocast():
                 outputs = model(images)
             probs = torch.sigmoid(outputs).cpu().numpy().flatten()
             preds = (probs >= 0.5).astype(int)
@@ -226,7 +220,6 @@ def analyze_misclassifications(model, test_loader, device, output_path, model_na
 
             progress_bar.set_postfix({'misclassified': len(misclassified)})
 
-    # Save analysis
     with open(f"{output_path}/misclassification_analysis.txt", 'w') as f:
         f.write(f"MISCLASSIFICATION ANALYSIS - {model_name}\n")
         f.write("=" * 60 + "\n\n")
@@ -266,23 +259,21 @@ def train_model(model_key, model, train_loader, val_loader, test_loader):
     output_save_path.mkdir(parents=True, exist_ok=True)
 
     criterion = FocalLoss(alpha=torch.tensor([CONFIG['alpha'], 1 - CONFIG['alpha']]), gamma=CONFIG['gamma'])
-    scaler = GradScaler()  # Initialize GradScaler for AMP
+    scaler = GradScaler()
     history = {
         'train_loss': [], 'val_loss': [], 'train_acc': [], 'val_acc': [],
         'train_f1': [], 'val_f1': [], 'train_auc': [], 'val_auc': []
     }
     best_val_loss = float('inf')
 
-    # Phase 1: Pretrain (frozen backbone except last_linear)
+    # Phase 1: pretrain classifier only
     for param in model.parameters():
         param.requires_grad = False
     for param in model.last_linear.parameters():
         param.requires_grad = True
 
-    # Get trainable parameters
     trainable_params = list(filter(lambda p: p.requires_grad, model.parameters()))
     if not trainable_params:
-        # If no trainable params after freezing, train all layers
         for param in model.parameters():
             param.requires_grad = True
         trainable_params = list(model.parameters())
@@ -317,7 +308,7 @@ def train_model(model_key, model, train_loader, val_loader, test_loader):
             best_val_loss = val_loss
             torch.save({'model_state_dict': model.state_dict()}, model_save_path / "best_model.pth")
 
-    # Phase 2: Finetune (unfreeze all)
+    # Phase 2: full finetune
     for param in model.parameters():
         param.requires_grad = True
     optimizer = optim.Adam(model.parameters(), lr=CONFIG['finetune_lr'], weight_decay=CONFIG['weight_decay'])
@@ -350,21 +341,18 @@ def train_model(model_key, model, train_loader, val_loader, test_loader):
             best_val_loss = val_loss
             torch.save({'model_state_dict': model.state_dict()}, model_save_path / "best_model.pth")
 
-    # Save final model after finetuning
     torch.save({'model_state_dict': model.state_dict()}, model_save_path / "final_model.pth")
 
-    # Test evaluation using best model
     checkpoint = torch.load(model_save_path / "best_model.pth")
     model.load_state_dict(checkpoint['model_state_dict'])
     test_loss, test_metrics = validate_epoch(model, test_loader, criterion, CONFIG['device'])
 
-    # Get predictions for analysis
     model.eval()
     y_true, y_pred_prob = [], []
     with torch.no_grad():
         for images, labels, _ in test_loader:
             images = images.to(CONFIG['device'])
-            with autocast():  # Enable mixed precision
+            with autocast():
                 outputs = model(images)
             probs = torch.sigmoid(outputs).cpu().numpy().flatten()
             y_true.extend(labels.numpy())
@@ -373,7 +361,6 @@ def train_model(model_key, model, train_loader, val_loader, test_loader):
     y_true = np.array(y_true)
     y_pred_prob = np.array(y_pred_prob)
 
-    # Measure inference time
     model.eval()
     print("Measuring inference time...")
     start_time = time.time()
@@ -381,14 +368,13 @@ def train_model(model_key, model, train_loader, val_loader, test_loader):
     with torch.no_grad():
         for images, _, _ in tqdm(test_loader, desc='Inference timing', leave=False):
             images = images.to(CONFIG['device'])
-            with autocast():  # Enable mixed precision
+            with autocast():
                 _ = model(images)
             total_samples += images.size(0)
     total_time = time.time() - start_time
     inference_time_ms = (total_time / total_samples) * 1000
     fps = total_samples / total_time
 
-    # Print results
     print(f"\nTest Results:")
     print(f"  Accuracy: {test_metrics['accuracy']:.4f}")
     print(f"  F1-Score: {test_metrics['f1']:.4f}")
@@ -396,7 +382,6 @@ def train_model(model_key, model, train_loader, val_loader, test_loader):
     print(f"  MCC: {test_metrics['mcc']:.4f}")
     print(f"  Inference: {inference_time_ms:.2f} ms/sample ({fps:.1f} FPS)")
 
-    # Analyze misclassifications
     misclassified = analyze_misclassifications(model, test_loader, CONFIG['device'], output_save_path, model_key)
 
     print(f"  Misclassified: {len(misclassified)} samples")
@@ -406,10 +391,8 @@ def train_model(model_key, model, train_loader, val_loader, test_loader):
             print(
                 f"    {i}. True: {sample['true_label']}, Pred: {sample['predicted_label']}, Conf: {sample['confidence']:.3f}")
 
-    # Save plots and results
     save_plots(history, test_metrics, y_true, y_pred_prob, output_save_path, model_key)
 
-    # Save results
     results = {
         'model_name': model_key,
         'test_loss': test_loss,
@@ -448,7 +431,6 @@ def main():
     print("Xception Model Training")
     print("=" * 22)
 
-    # Load data
     train_dataset = DeepfakeDataset(f"{CONFIG['data_path']}/train.csv", transform=train_transform)
     val_dataset = DeepfakeDataset(f"{CONFIG['data_path']}/val.csv", transform=val_test_transform)
     test_dataset = DeepfakeDataset(f"{CONFIG['data_path']}/test.csv", transform=val_test_transform)
@@ -468,7 +450,6 @@ def main():
 
     print(f"Train: {len(train_dataset):,}, Val: {len(val_dataset):,}, Test: {len(test_dataset):,}")
 
-    # Create model
     model = xception(num_classes=1, pretrained='imagenet').to(CONFIG['device'])
     results = train_model("Xception", model, train_loader, val_loader, test_loader)
 

@@ -30,7 +30,7 @@ class DeepfakeDataset(Dataset):
         if self.transform:
             image = self.transform(image)
 
-        return image, float(label), img_path  # Added img_path
+        return image, float(label), img_path
 
     def apply_frequency_preprocessing(self, image):
         """Apply frequency domain preprocessing."""
@@ -66,7 +66,7 @@ class DeepfakeDataset(Dataset):
 
 class RandomJPEGCompression:
     """Apply random JPEG compression."""
-    def __init__(self, quality_range=(70, 90)):  # Giảm chất lượng thấp hơn
+    def __init__(self, quality_range=(70, 90)):
         self.quality_range = quality_range
 
     def __call__(self, img):
@@ -79,18 +79,18 @@ class RandomJPEGCompression:
 
 class RandomBlur:
     """Apply random blur."""
-    def __init__(self, p=0.2):  # Tăng từ 0.05
+    def __init__(self, p=0.2):
         self.p = p
 
     def __call__(self, img):
         if random.random() > self.p:
             return img
-        radius = random.uniform(0.3, 0.7)  # Tăng từ 0.1-0.3
+        radius = random.uniform(0.3, 0.7)
         return img.filter(ImageFilter.GaussianBlur(radius))
 
 class RandomNoise:
     """Add random noise."""
-    def __init__(self, p=0.2):  # Tăng từ 0.05
+    def __init__(self, p=0.2):
         self.p = p
         self.noise_type = 'all'
 
@@ -100,15 +100,15 @@ class RandomNoise:
         img_array = np.array(img, dtype=np.float32) / 255.0
         noise_type = random.choice(['gaussian', 'salt_pepper', 'speckle'])
         if noise_type == 'gaussian':
-            noise = np.random.normal(0, 0.01, img_array.shape).astype(np.float32)  # Tăng từ 0.005
+            noise = np.random.normal(0, 0.01, img_array.shape).astype(np.float32)
             img_array = img_array + noise
         elif noise_type == 'salt_pepper':
-            prob = 0.01  # Tăng từ 0.005
+            prob = 0.01
             rnd = np.random.random(img_array.shape[:2]).astype(np.float32)
             img_array[rnd < prob / 2] = 0
             img_array[rnd > 1 - prob / 2] = 1
         else:
-            noise = np.random.randn(*img_array.shape).astype(np.float32) * 0.01  # Tăng từ 0.005
+            noise = np.random.randn(*img_array.shape).astype(np.float32) * 0.01
             img_array = img_array + img_array * noise
         img_array = np.clip(img_array, 0, 1)
         return Image.fromarray((img_array * 255).astype(np.uint8))
@@ -123,7 +123,7 @@ class RandomCrop:
 
 class ColorConstancy:
     """Apply color constancy algorithms."""
-    def __init__(self, method='gray_world', p=0.2):  # Tăng từ 0.1
+    def __init__(self, method='gray_world', p=0.2):
         self.method = method
         self.p = p
 
@@ -144,7 +144,7 @@ class ColorConstancy:
 
 class AdvancedCutout:
     """Enhanced cutout with multiple strategies."""
-    def __init__(self, n_holes=2, length=15, strategy='random'):  # Tăng từ 1, 5
+    def __init__(self, n_holes=2, length=15, strategy='random'):
         self.n_holes = n_holes
         self.length = length
         self.strategy = strategy
@@ -182,19 +182,18 @@ class AdvancedCutout:
         mask = torch.from_numpy(mask).expand_as(img).to(img.device)
         return img * mask
 
-# Transform configurations
 IMG_SIZE = 299
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
 train_transform = transforms.Compose([
-    transforms.RandomResizedCrop(IMG_SIZE, scale=(0.9, 1.0), ratio=(0.95, 1.05)),  # Mở rộng phạm vi
-    transforms.RandomHorizontalFlip(p=0.3),  # Tăng từ 0.2
-    transforms.RandomRotation(10),  # Tăng từ 5
-    transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1)),  # Thêm biến đổi affine
+    transforms.RandomResizedCrop(IMG_SIZE, scale=(0.9, 1.0), ratio=(0.95, 1.05)),
+    transforms.RandomHorizontalFlip(p=0.3),
+    transforms.RandomRotation(10),
+    transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1)),
     ColorConstancy(method='gray_world', p=0.2),
-    transforms.RandomApply([transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)], p=0.5),  # Tăng cường độ
-    transforms.RandomGrayscale(p=0.1),  # Tăng từ 0.05
+    transforms.RandomApply([transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1)], p=0.5),
+    transforms.RandomGrayscale(p=0.1),
     RandomJPEGCompression(quality_range=(70, 90)),
     RandomBlur(p=0.2),
     RandomNoise(p=0.2),

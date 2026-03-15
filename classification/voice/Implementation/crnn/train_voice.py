@@ -27,19 +27,19 @@ class FocalLoss(nn.Module):
         self.gamma = gamma
 
     def forward(self, inputs, targets):
-        log_probs = F.log_softmax(inputs, dim=-1)  # Shape: (batch_size, num_classes)
-        probs = torch.exp(log_probs)  # Shape: (batch_size, num_classes)
-        targets_onehot = F.one_hot(targets, num_classes=2).float()  # Shape: (batch_size, num_classes)
-        focal_weight = self.alpha * (1 - probs) ** self.gamma  # Shape: (batch_size, num_classes)
-        loss = -focal_weight * log_probs * targets_onehot  # Element-wise multiplication
-        return loss.mean()  # Average over all dimensions
+        log_probs = F.log_softmax(inputs, dim=-1)
+        probs = torch.exp(log_probs)
+        targets_onehot = F.one_hot(targets, num_classes=2).float()
+        focal_weight = self.alpha * (1 - probs) ** self.gamma
+        loss = -focal_weight * log_probs * targets_onehot
+        return loss.mean()
 
-# Paths
-DATA_DIR = "/workspace/sv/data_preprocessing/asvsproof_data"
-OUTPUT_BASE_DIR = "/workspace/sv/classification/voice/output"
-MODEL_DIR = "/workspace/sv/classification/voice/models"
+# Project root (4 levels up from crnn/)
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+DATA_DIR = os.path.join(_PROJECT_ROOT, "data_preprocessing", "asvsproof_data")
+OUTPUT_BASE_DIR = os.path.join(_PROJECT_ROOT, "classification", "voice", "output")
+MODEL_DIR = os.path.join(_PROJECT_ROOT, "classification", "voice", "models")
 
-# Training parameters
 BATCH_SIZE = 64
 NUM_EPOCHS = 50
 LEARNING_RATE = 0.00005
@@ -48,7 +48,6 @@ DROPOUT_RATE = 0.5
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_WORKERS = 8
 
-# Early stopping and scheduler
 EARLY_STOPPING_PATIENCE = 10
 MIN_DELTA = 0.0005
 SCHEDULER_PATIENCE = 3
@@ -136,19 +135,19 @@ class VoiceTrainer:
         self.model.train()
         total_loss = 0.0
         all_preds, all_labels = [], []
-        alpha = 0.2  # Mixup hyperparameter
+        alpha = 0.2
         for images, labels in tqdm(self.train_loader, desc=f"Epoch"):
             images, labels = images.to(DEVICE), labels.to(DEVICE)
-            images = images.mean(dim=1, keepdim=True)  # (batch_size, 3, H, W) -> (batch_size, 1, H, W)
+            images = images.mean(dim=1, keepdim=True)
             self.optimizer.zero_grad(set_to_none=True)
             with autocast('cuda'):
-                outputs = self.model(images)  # (batch_size, num_classes)
-                if np.random.rand() < 0.5:  # Mixup
+                outputs = self.model(images)
+                if np.random.rand() < 0.5:
                     lam = np.random.beta(alpha, alpha)
                     batch_size = images.size(0)
                     idx = torch.randperm(batch_size).to(DEVICE)
                     mixed_images = lam * images + (1 - lam) * images[idx]
-                    outputs_mixed = self.model(mixed_images)  # (batch_size, num_classes)
+                    outputs_mixed = self.model(mixed_images)
                     loss = lam * self.criterion(outputs_mixed, labels) + (1 - lam) * self.criterion(outputs_mixed, labels[idx])
                 else:
                     loss = self.criterion(outputs, labels)
@@ -224,9 +223,9 @@ class VoiceTrainer:
         with torch.no_grad():
             for images, labels in self.val_loader:
                 images, labels = images.to(DEVICE), labels.to(DEVICE)
-                images = images.mean(dim=1, keepdim=True)  # Convert to single channel
+                images = images.mean(dim=1, keepdim=True)
                 with autocast('cuda'):
-                    outputs = self.model(images)  # (batch_size, num_classes)
+                    outputs = self.model(images)
                     loss = self.criterion(outputs, labels)
                 total_loss += loss.item()
                 preds = torch.softmax(outputs, dim=-1)[:, 1].cpu().numpy()
@@ -245,9 +244,9 @@ class VoiceTrainer:
         with torch.no_grad():
             for batch_idx, (images, labels) in enumerate(self.test_loader):
                 images, labels = images.to(DEVICE), labels.to(DEVICE)
-                images = images.mean(dim=1, keepdim=True)  # Convert to single channel
+                images = images.mean(dim=1, keepdim=True)
                 with autocast('cuda'):
-                    outputs = self.model(images)  # (batch_size, num_classes)
+                    outputs = self.model(images)
                 batch_preds = torch.softmax(outputs, dim=-1)[:, 1].cpu().numpy()
                 batch_labels = labels.cpu().numpy()
                 batch_indices = range(batch_idx * BATCH_SIZE, min((batch_idx + 1) * BATCH_SIZE, len(self.test_dataset)))

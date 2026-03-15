@@ -1,7 +1,10 @@
+# 7
+
 import os
 import csv
 
-ROOT_DIR = r"D:\Deepfake_Detection_project\data_preprocessing\fakeavceleb_audios_videos"
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+ROOT_DIR = os.path.join(PROJECT_ROOT, "data_preprocessing", "fakeavceleb_audios_videos")
 FRAME_DIR = os.path.join(ROOT_DIR, "video_frame_faces")
 OUTPUT_CSV = os.path.join(ROOT_DIR, "labels.csv")
 

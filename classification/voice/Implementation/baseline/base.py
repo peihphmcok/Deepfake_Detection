@@ -18,12 +18,12 @@ from baseline_models import SqueezeNetBaseline, EfficientNetB0Baseline, ShuffleN
 from classification.voice.Implementation.transform import train_transforms, test_transforms
 from classification.voice.Implementation.utils import EarlyStopping, calculate_eer
 
-# Paths
-DATA_DIR = "D:/Deepfake_Detection_project/data_preprocessing/voice_data"
-OUTPUT_BASE_DIR = "D:/Deepfake_Detection_project/classification/voice/output"
-MODEL_DIR = "D:/Deepfake_Detection_project/classification/voice/models"
+# Project root (4 levels up from baseline/)
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
+DATA_DIR = os.path.join(_PROJECT_ROOT, "data_preprocessing", "voice_data")
+OUTPUT_BASE_DIR = os.path.join(_PROJECT_ROOT, "classification", "voice", "output")
+MODEL_DIR = os.path.join(_PROJECT_ROOT, "classification", "voice", "models")
 
-# Training parameters
 BATCH_SIZE = 24
 NUM_EPOCHS = 50
 LEARNING_RATE = 0.0001
@@ -32,14 +32,12 @@ DROPOUT_RATE = 0.4
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 NUM_WORKERS = 0
 
-# Model configurations
 MODEL_CONFIGS = {
-    'squeezenet': {'lr_multiplier': 0.01, 'batch_size': 24},  # Reduced for stability
+    'squeezenet': {'lr_multiplier': 0.01, 'batch_size': 24},
     'efficientnet': {'lr_multiplier': 0.1, 'batch_size': 24},
     'shufflenet': {'lr_multiplier': 0.1, 'batch_size': 24},
 }
 
-# Early stopping and scheduler
 EARLY_STOPPING_PATIENCE = 5
 MIN_DELTA = 0.001
 SCHEDULER_PATIENCE = 3
@@ -108,18 +106,15 @@ class BaselineTrainer:
             os.path.join(DATA_DIR, "test"),
             transform=test_transforms
         )
-        # Remap labels: ImageFolder assigns 0 to 'fake' and 1 to 'real' due to alphabetical order
-        # We want 0=real, 1=fake
+        # Label remapping: 0=real, 1=fake (ImageFolder uses alphabetical order)
         self.class_to_idx = {'real': 0, 'fake': 1}
         original_class_to_idx = self.train_dataset.class_to_idx
         self.label_map = {original_class_to_idx['fake']: 1, original_class_to_idx['real']: 0}
 
-        # Apply label remapping to datasets
         self.train_dataset.samples = [(path, self.label_map[label]) for path, label in self.train_dataset.samples]
         self.val_dataset.samples = [(path, self.label_map[label]) for path, label in self.val_dataset.samples]
         self.test_dataset.samples = [(path, self.label_map[label]) for path, label in self.test_dataset.samples]
 
-        # Update classes to reflect new order
         self.train_dataset.classes = ['real', 'fake']
         self.val_dataset.classes = ['real', 'fake']
         self.test_dataset.classes = ['real', 'fake']
@@ -164,13 +159,12 @@ class BaselineTrainer:
         self.model.train()
         total_loss = 0.0
         all_preds, all_labels = [], []
-        alpha = 0.2  # Mixup hyperparameter
+        alpha = 0.2
         for images, labels in tqdm(self.train_loader, desc=f"Epoch"):
             images, labels = images.to(DEVICE), labels.to(DEVICE)
             if torch.isnan(images).any():
                 print("NaN detected in input images during training")
                 continue
-            # Apply Mixup with 50% probability
             if np.random.rand() < 0.5:
                 lam = np.random.beta(alpha, alpha)
                 batch_size = images.size(0)
@@ -194,7 +188,7 @@ class BaselineTrainer:
                     loss = self.criterion(outputs, labels)
             self.scaler.scale(loss).backward()
             self.scaler.unscale_(self.optimizer)
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=0.5)  # Reduced for stability
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=0.5)
             self.scaler.step(self.optimizer)
             self.scaler.update()
             total_loss += loss.item()
@@ -209,7 +203,7 @@ class BaselineTrainer:
         train_accs, val_accs = [], []
         train_f1s, val_f1s = [], []
         train_aucs, val_aucs = [], []
-        best_val_loss = float('inf')  # Track validation loss best
+        best_val_loss = float('inf')
 
         for epoch in range(NUM_EPOCHS):
             train_loss, train_preds, train_labels = self._train_epoch()
@@ -237,7 +231,6 @@ class BaselineTrainer:
             print(
                 f"           Val Loss={val_loss:.4f}, Val Acc={val_acc:.4f}, Val F1={val_f1:.4f}, Val AUC={val_auc:.4f}")
 
-            # Save best model if val_loss lower
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 torch.save(self.model.state_dict(), self.best_model_path)
@@ -248,12 +241,10 @@ class BaselineTrainer:
                 print(f"Early stopping at epoch {epoch + 1}")
                 break
 
-        # Save final model
         final_model_path = os.path.join(self.model_dir, f"{self.model_name}_final_model.pth")
         torch.save(self.model.state_dict(), final_model_path)
         print(f"Final model saved at {final_model_path}")
 
-        # Load best model for evaluation
         self.model.load_state_dict(torch.load(self.best_model_path))
         print(f"Loaded best model from {self.best_model_path} for evaluation")
         return train_losses, val_losses, train_accs, val_accs, train_f1s, val_f1s, train_aucs, val_aucs

@@ -1,0 +1,132 @@
+# ============================================
+# Deepfake Detection - Scientific Repo .gitignore
+# Chỉ đẩy code, cấu hình; không đẩy data, model, output
+# ============================================
+
+# ----- Python -----
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+
+# ----- Data: chỉ ignore file dữ liệu lớn, giữ script trong data/ -----
+data/**/*.zip
+data/**/*.mp4
+data/**/*.avi
+data/**/*.mov
+data/**/*.mkv
+data/**/*.wav
+data/**/*.mp3
+data/**/*.flac
+data/**/*.npy
+data/**/*.npz
+data/**/*.pkl
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.wav
+*.mp3
+*.flac
+*.jpg
+*.jpeg
+*.png
+*.gif
+!docs/**/*.png
+!assets/**/*.png
+*.npy
+*.npz
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+
+# ----- Models & checkpoints -----
+*.pt
+*.pth
+*.ckpt
+*.weights
+checkpoints/
+runs/
+wandb/
+
+# ----- Output & logs (kết quả thí nghiệm local) -----
+output/
+**/output/
+**/output_*/
+logs/
+*.log
+results/
+classification/multimodal/output/
+
+# ----- IDE & Editor -----
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# ----- OS -----
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ----- Jupyter -----
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ----- Testing & Coverage -----
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# ----- Misc -----
+*.bak
+*.tmp
+*.temp
+.cache/
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# GUI (removed from repo)
+classification/GUI/
+
+# ----- Optional -----
+# tensorboard/
+# mlruns/

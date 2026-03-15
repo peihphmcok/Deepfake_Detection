@@ -29,7 +29,7 @@ class Attention(nn.Module):
             nn.Linear(in_channels // 8, in_channels),
             nn.Sigmoid()
         )
-        # Khởi tạo trọng số
+        # Init weights
         for m in self.fc.modules():
             if isinstance(m, nn.Linear):
                 init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
@@ -48,7 +48,7 @@ class SeparableConv2d(nn.Module):
         super(SeparableConv2d, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size, stride, padding, dilation, groups=in_channels, bias=bias)
         self.pointwise = nn.Conv2d(in_channels, out_channels, 1, 1, 0, 1, 1, bias=bias)
-        # Khởi tạo trọng số
+        # Init weights
         init.kaiming_normal_(self.conv1.weight, mode='fan_out', nonlinearity='relu')
         init.kaiming_normal_(self.pointwise.weight, mode='fan_out', nonlinearity='relu')
         if self.conv1.bias is not None:
@@ -135,7 +135,7 @@ class ImprovedXception(nn.Module):
         self.bn4 = nn.BatchNorm2d(2048)
         self.dropout = nn.Dropout(0.5)
         self.last_linear = nn.Linear(2048, num_classes)
-        # Khởi tạo trọng số
+        # Init weights
         init.kaiming_normal_(self.conv1.weight, mode='fan_out', nonlinearity='relu')
         init.kaiming_normal_(self.conv2.weight, mode='fan_out', nonlinearity='relu')
         init.kaiming_normal_(self.last_linear.weight, mode='fan_out', nonlinearity='relu')

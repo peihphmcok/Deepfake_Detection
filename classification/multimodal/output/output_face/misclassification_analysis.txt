@@ -1,39 +1,39 @@
 MISCLASSIFICATION ANALYSIS - Advanced Xception
 ============================================================
 
-Total misclassified samples: 8407
-Fake misclassified as Real: 8020
-Real misclassified as Fake: 387
+Total misclassified samples: 5665
+Fake misclassified as Real: 5380
+Real misclassified as Fake: 285
 
 TOP 5 FAKE MISCLASSIFIED AS REAL:
-1. /workspace/Deepfake_Detection/data_preprocessing/video_frame_faces/fake/sample_5965/frame1.jpg
-   Confidence: 0.8608
+1. C:/Personal/df/data_preprocessing/fakeavceleb_audios_videos/video_frame_faces/fake/sample_4406/frame1.jpg
+   Confidence: 0.8718
 
-2. /workspace/Deepfake_Detection/data_preprocessing/video_frame_faces/fake/sample_6279/frame2.jpg
-   Confidence: 0.8486
+2. C:/Personal/df/data_preprocessing/fakeavceleb_audios_videos/video_frame_faces/fake/sample_6287/frame1.jpg
+   Confidence: 0.8625
 
-3. /workspace/Deepfake_Detection/data_preprocessing/video_frame_faces/fake/sample_7515/frame2.jpg
-   Confidence: 0.8486
+3. C:/Personal/df/data_preprocessing/fakeavceleb_audios_videos/video_frame_faces/fake/sample_4476/frame1.jpg
+   Confidence: 0.8524
 
-4. /workspace/Deepfake_Detection/data_preprocessing/video_frame_faces/fake/sample_5899/frame2.jpg
-   Confidence: 0.8472
+4. C:/Personal/df/data_preprocessing/fakeavceleb_audios_videos/video_frame_faces/fake/sample_5608/frame1.jpg
+   Confidence: 0.8443
 
-5. /workspace/Deepfake_Detection/data_preprocessing/video_frame_faces/fake/sample_4406/frame1.jpg
-   Confidence: 0.8384
+5. C:/Personal/df/data_preprocessing/fakeavceleb_audios_videos/video_frame_faces/fake/sample_5565/frame1.jpg
+   Confidence: 0.8434
 
 TOP 5 REAL MISCLASSIFIED AS FAKE:
-1. /workspace/Deepfake_Detection/data_preprocessing/video_frame_faces/real/sample_0077/frame2.jpg
-   Confidence: 0.8882
+1. C:/Personal/df/data_preprocessing/fakeavceleb_audios_videos/video_frame_faces/real/sample_0288/frame0.jpg
+   Confidence: 0.8781
 
-2. /workspace/Deepfake_Detection/data_preprocessing/video_frame_faces/real/sample_0288/frame0.jpg
-   Confidence: 0.8770
+2. C:/Personal/df/data_preprocessing/fakeavceleb_audios_videos/video_frame_faces/real/sample_0077/frame1.jpg
+   Confidence: 0.8639
 
-3. /workspace/Deepfake_Detection/data_preprocessing/video_frame_faces/real/sample_0400/frame2.jpg
-   Confidence: 0.8545
+3. C:/Personal/df/data_preprocessing/fakeavceleb_audios_videos/video_frame_faces/real/sample_0402/frame1.jpg
+   Confidence: 0.8566
 
-4. /workspace/Deepfake_Detection/data_preprocessing/video_frame_faces/real/sample_0441/frame0.jpg
-   Confidence: 0.8398
+4. C:/Personal/df/data_preprocessing/fakeavceleb_audios_videos/video_frame_faces/real/sample_0400/frame1.jpg
+   Confidence: 0.8536
 
-5. /workspace/Deepfake_Detection/data_preprocessing/video_frame_faces/real/sample_0447/frame0.jpg
-   Confidence: 0.8276
+5. C:/Personal/df/data_preprocessing/fakeavceleb_audios_videos/video_frame_faces/real/sample_0441/frame0.jpg
+   Confidence: 0.8396
 

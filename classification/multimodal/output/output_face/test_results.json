@@ -1,26 +1,26 @@
 {
-  "test_loss": 0.6034934892936843,
-  "accuracy": 0.6425443258641949,
-  "f1": 0.7676918400618973,
-  "auc": 0.7766077393371784,
-  "mcc": 0.20323910825519867,
-  "fake_detection_rate": 0.6339738031125919,
-  "real_detection_rate": 0.7593283582089553,
+  "test_loss": 0.6074230606475067,
+  "accuracy": 0.6388038765621015,
+  "f1": 0.7651813471502591,
+  "auc": 0.7596695969827559,
+  "mcc": 0.1894375728038174,
+  "fake_detection_rate": 0.6317590691307323,
+  "real_detection_rate": 0.7346368715083799,
   "confusion_matrix": [
     [
-      1221,
-      387
+      789,
+      285
     ],
     [
-      8020,
-      13891
+      5380,
+      9230
     ]
   ],
-  "true_negatives": 1221,
-  "false_positives": 387,
-  "false_negatives": 8020,
-  "true_positives": 13891,
-  "inference_time_ms": 1.0337552842226527,
-  "fps": 967.3469294543578,
-  "misclassified_count": 8407
+  "true_negatives": 789,
+  "false_positives": 285,
+  "false_negatives": 5380,
+  "true_positives": 9230,
+  "inference_time_ms": 108.37069898843765,
+  "fps": 9.22758650940041,
+  "misclassified_count": 5665
 }

@@ -12,27 +12,27 @@ from torch.utils.data import DataLoader
 from torch.amp import autocast
 from torchvision import datasets
 
-from classification.voice.Implementation.crnn.crnn_model_3 import ImprovedCRNN
+from classification.voice.Implementation.crnn.crnn_model import ImprovedCRNN
 from classification.voice.Implementation.transform import test_transforms
 
-# CONFIG
-DATA_PATH = "/workspace/sv/data_preprocessing/audio"
-MODEL_PATH = "/classification/voice/models/crnn_2_best_model.pth"
-OUTPUT_PATH = "/classification/multimodal/output/output_audio_2"
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+DATA_PATH = os.path.join(PROJECT_ROOT, "data_preprocessing", "fakeavceleb_audios_videos", "audio")
+MODEL_PATH = os.path.join(PROJECT_ROOT, "classification", "voice", "models", "crnn_final_model.pth")
+OUTPUT_PATH = os.path.join(PROJECT_ROOT, "classification", "multimodal", "output", "output_audio")
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BATCH_SIZE = 64
-NUM_WORKERS = 8
+NUM_WORKERS = 10
 
 os.makedirs(OUTPUT_PATH, exist_ok=True)
 
-def calculate_metrics(y_true, y_pred_prob, threshold=0.45):
+def calculate_metrics(y_true, y_pred_prob, threshold=0.5):
     y_pred = (y_pred_prob >= threshold).astype(int)
     cm = confusion_matrix(y_true, y_pred)
     tn, fp, fn, tp = cm.ravel()
     return {
         'accuracy': accuracy_score(y_true, y_pred),
         'f1': f1_score(y_true, y_pred, zero_division=0),
-        'auc': roc_auc_score(y_true, y_pred_prob) if len(np.unique(y_true)) > 1 else 0.45,
+        'auc': roc_auc_score(y_true, y_pred_prob) if len(np.unique(y_true)) > 1 else 0.5,
         'mcc': matthews_corrcoef(y_true, y_pred),
         'fake_detection_rate': tp / (tp + fn) if (tp + fn) > 0 else 0,
         'real_detection_rate': tn / (tn + fp) if (tn + fp) > 0 else 0,
@@ -54,7 +54,6 @@ def plot_confusion_matrix(cm, save_path, labels=["real", "fake"]):
     plt.close()
 
 def evaluate_model():
-    # Check directory structure and create balanced dataset if needed
     fake_dir = Path(DATA_PATH) / 'fake'
     real_dir = Path(DATA_PATH) / 'real'
 
@@ -64,7 +63,6 @@ def evaluate_model():
         fake_files = list(fake_dir.glob('*.png'))
         mid_point = len(fake_files) // 2
 
-        # Move first half to real directory
         for i, file_path in enumerate(fake_files[:mid_point]):
             new_path = real_dir / file_path.name
             file_path.rename(new_path)
@@ -73,7 +71,6 @@ def evaluate_model():
 
     dataset = datasets.ImageFolder(DATA_PATH, transform=test_transforms)
 
-    # Ensure correct label mapping: real=0, fake=1
     class_to_idx = {'real': 0, 'fake': 1}
     original_map = dataset.class_to_idx
     if 'fake' in original_map and 'real' in original_map:
@@ -97,18 +94,17 @@ def evaluate_model():
     with torch.no_grad():
         for images, labels in tqdm(loader, desc="Testing"):
             images, labels = images.to(DEVICE), labels.to(DEVICE)
-            images = images.mean(dim=1, keepdim=True)  # Convert RGB to grayscale
+            images = images.mean(dim=1, keepdim=True)
 
             with autocast('cuda', enabled=torch.cuda.is_available()):
-                outputs = model(images)  # Shape: (batch_size, num_classes)
+                outputs = model(images)
 
             probs = torch.softmax(outputs, dim=-1)[:, 1].cpu().numpy()
-            preds = (probs >= 0.45).astype(int)
+            preds = (probs >= 0.5).astype(int)
 
             y_true.extend(labels.cpu().numpy())
             y_pred_prob.extend(probs)
 
-            # Store all predictions
             for i in range(len(preds)):
                 sample_path = dataset.samples[sample_idx][0]
                 true_label = labels[i].item()
@@ -123,7 +119,6 @@ def evaluate_model():
                     "probability_fake": float(probs[i])
                 })
 
-                # Store misclassified samples
                 if pred_label != true_label:
                     misclassified.append({
                         "image_path": sample_path,
@@ -141,7 +136,6 @@ def evaluate_model():
 
     metrics = calculate_metrics(np.array(y_true), np.array(y_pred_prob))
 
-    # Save metrics
     with open(os.path.join(OUTPUT_PATH, "test_results.txt"), "w") as f:
         f.write("Voice Test Results:\n")
         f.write("=" * 50 + "\n")
@@ -155,17 +149,14 @@ def evaluate_model():
         f.write(f"Total samples: {len(dataset)}\n")
         f.write(f"Misclassified samples: {len(misclassified)}\n")
 
-    # Save all predictions
     pd.DataFrame(all_predictions).to_csv(
         os.path.join(OUTPUT_PATH, "all_predictions.csv"), index=False
     )
 
-    # Save misclassified samples
     pd.DataFrame(misclassified).to_csv(
         os.path.join(OUTPUT_PATH, "misclassified_samples.csv"), index=False
     )
 
-    # Plot confusion matrix
     plot_confusion_matrix(
         metrics['confusion_matrix'],
         os.path.join(OUTPUT_PATH, "confusion_matrix.png")

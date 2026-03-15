@@ -5,12 +5,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
-# Đường dẫn
-DATA_DIR = '/data_preprocessing/asvsproof_data/'
-TRAIN_WAV_DIR = 'D:/Deepfake_Detection_project/data/ASVspoof2017_V2/ASVspoof2017_V2_train/'
-DEV_WAV_DIR = 'D:/Deepfake_Detection_project/data/ASVspoof2017_V2/ASVspoof2017_V2_dev/'
-TRAIN_PROTOCOL = 'D:/Deepfake_Detection_project/data/ASVspoof2017_V2/protocol_V2/ASVspoof2017_V2_train.txt'
-DEV_PROTOCOL = 'D:/Deepfake_Detection_project/data/ASVspoof2017_V2/protocol_V2/ASVspoof2017_V2_dev.txt'
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+_DATA = os.path.join(PROJECT_ROOT, "data", "ASVspoof2017_V2")
+DATA_DIR = os.path.join(PROJECT_ROOT, "data_preprocessing", "asvsproof_data")
+TRAIN_WAV_DIR = os.path.join(_DATA, "ASVspoof2017_V2_train")
+DEV_WAV_DIR = os.path.join(_DATA, "ASVspoof2017_V2_dev")
+TRAIN_PROTOCOL = os.path.join(_DATA, "protocol_V2", "ASVspoof2017_V2_train.txt")
+DEV_PROTOCOL = os.path.join(_DATA, "protocol_V2", "ASVspoof2017_V2_dev.txt")
 
 # Tạo thư mục
 os.makedirs(DATA_DIR, exist_ok=True)

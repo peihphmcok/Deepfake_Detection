@@ -16,11 +16,15 @@ from classification.face.Implementation.xception_optimized.advanced_xception imp
 from classification.face.Implementation.advanced_transforms import DeepfakeDataset, val_test_transform
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-DATA_PATH = "/workspace/Deepfake_Detection/data_preprocessing"
-MODEL_PATH = "/workspace/Deepfake_Detection/classification/face/models/model_advanced_xception"
-OUTPUT_PATH = "/workspace/Deepfake_Detection/classification/multimodal/output/output_face_final"
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+DATA_PATH = os.path.join(PROJECT_ROOT, "data_preprocessing", "fakeavceleb_audios_videos")
+MODEL_PATH = os.path.join(PROJECT_ROOT, "classification", "face", "models", "model_advanced_xception")
+OUTPUT_PATH = os.path.join(PROJECT_ROOT, "classification", "multimodal", "output", "output_face")
+
 BATCH_SIZE = 64
-NUM_WORKERS = 4
+NUM_WORKERS = 10
+
 
 def calculate_metrics(y_true, y_pred_prob, threshold=0.5):
     y_pred = (y_pred_prob >= threshold).astype(int)
@@ -40,6 +44,7 @@ def calculate_metrics(y_true, y_pred_prob, threshold=0.5):
         'true_positives': int(tp)
     }
 
+
 def plot_confusion_matrix(cm, save_path, labels=["real", "fake"]):
     plt.figure(figsize=(5, 4))
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=labels, yticklabels=labels)
@@ -58,9 +63,11 @@ def analyze_misclassifications(model, test_loader, device):
         for images, labels, paths in tqdm(test_loader, desc='Analyzing misclassifications', leave=False):
             images = images.to(device)
             labels_np = labels.numpy()
+
             with autocast(enabled=device.type == 'cuda'):
                 outputs = model(images)
                 probs = torch.sigmoid(outputs).cpu().numpy().flatten()
+
             preds = (probs >= 0.5).astype(int)
             for idx in range(len(labels)):
                 if labels_np[idx] != preds[idx]:
@@ -73,14 +80,19 @@ def analyze_misclassifications(model, test_loader, device):
                     })
     return misclassified
 
+
 def evaluate_model():
     test_dataset = DeepfakeDataset(f"{DATA_PATH}/labels.csv", transform=val_test_transform)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=NUM_WORKERS,
                              pin_memory=True)
     print(f"Test dataset size: {len(test_dataset):,}")
+    print(f"Device being used: {DEVICE}")
 
     model = improved_xception(num_classes=1, pretrained=None).to(DEVICE)
-    checkpoint = torch.load(f"{MODEL_PATH}/final_model.pth")
+
+    print(f"Loading checkpoint from {MODEL_PATH}/final_model.pth ...")
+    checkpoint = torch.load(f"{MODEL_PATH}/final_model.pth", map_location=torch.device('cpu'))
+
     model.load_state_dict(checkpoint['model_state_dict'])
     model.eval()
     params = sum(p.numel() for p in model.parameters() if p.requires_grad) / 1e6
@@ -91,19 +103,23 @@ def evaluate_model():
     y_true, y_pred_prob = [], []
 
     frame_predictions = []
+
+    print("Starting evaluation...")
     with torch.no_grad():
         for images, labels, paths in tqdm(test_loader, desc='Evaluating', leave=False):
             images, labels = images.to(DEVICE), labels.to(DEVICE).float().unsqueeze(1)
+
             with autocast(enabled=DEVICE.type == 'cuda'):
                 outputs = model(images)
                 loss = criterion(outputs, labels)
+
             test_loss += loss.item() * images.size(0)
             probs = torch.sigmoid(outputs).cpu().numpy().flatten()
             y_true.extend(labels.cpu().numpy().flatten())
             y_pred_prob.extend(probs)
 
             for i in range(len(paths)):
-                sample_id = os.path.normpath(paths[i]).split(os.sep)[-2]  # trích sample_XXXX
+                sample_id = os.path.normpath(paths[i]).split(os.sep)[-2]
                 label_str = "fake" if labels[i].item() == 1 else "real"
                 frame_predictions.append({
                     "sample_id": sample_id,
@@ -119,11 +135,14 @@ def evaluate_model():
     start_time = time.time()
     total_samples = 0
     with torch.no_grad():
-        for images, _, _ in tqdm(test_loader, desc='Inference timing', leave=False):
+        limit_batches = 10
+        for i, (images, _, _) in enumerate(tqdm(test_loader, desc='Inference timing', leave=False)):
+            if i >= limit_batches: break
             images = images.to(DEVICE)
             with autocast(enabled=DEVICE.type == 'cuda'):
                 _ = model(images)
             total_samples += images.size(0)
+
     total_time = time.time() - start_time
     inference_time_ms = (total_time / total_samples) * 1000
     fps = total_samples / total_time
@@ -183,5 +202,7 @@ def evaluate_model():
     frame_pred_df = pd.DataFrame(frame_predictions)
     frame_pred_df.to_csv(os.path.join(OUTPUT_PATH, "face_frame_predictions.csv"), index=False)
     print(f"Đã ghi {len(frame_predictions)} dòng vào face_frame_predictions.csv")
+
+
 if __name__ == "__main__":
     evaluate_model()

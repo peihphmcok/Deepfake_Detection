@@ -52,7 +52,7 @@ class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1, drop_prob=0.1):
         super(ResidualBlock, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=(3, 7), stride=stride, padding=(1, 3),
-                               bias=False)  # Wider frequency kernel
+                               bias=False)
         self.bn1 = nn.BatchNorm2d(out_channels)
         self.relu = nn.ReLU(inplace=True)
         self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=(3, 7), stride=1, padding=(1, 3), bias=False)
@@ -90,26 +90,26 @@ class AttentionPooling(nn.Module):
 class ImprovedCRNN(nn.Module):
     def __init__(self, num_classes, dropout_rate=0.3):
         super(ImprovedCRNN, self).__init__()
-        print("Initializing ImprovedCRNN")  # Debug print
+        print("Initializing ImprovedCRNN")
 
         self.conv_layers = nn.Sequential(
-            ResidualBlock(1, 40, stride=1, drop_prob=0.1),  # 299x299
-            nn.MaxPool2d(2, 2),  # 149x149
+            ResidualBlock(1, 40, stride=1, drop_prob=0.1),
+            nn.MaxPool2d(2, 2),
             FrequencyWeighting(channels=40, freq_dim=149),
             ResidualBlock(40, 80, stride=1, drop_prob=0.1),
-            nn.MaxPool2d(2, 2),  # 74x74
+            nn.MaxPool2d(2, 2),
             ResidualBlock(80, 120, stride=1, drop_prob=0.1),
-            nn.MaxPool2d(2, 2),  # 37x37
+            nn.MaxPool2d(2, 2),
         )
 
         self.gru = nn.GRU(
-            input_size=120 * 37,  # 120 channels * 37 freq
+            input_size=120 * 37,
             hidden_size=128,
             num_layers=1,
             batch_first=True,
             bidirectional=True
         )
-        self.norm1 = nn.InstanceNorm1d(120 * 37, affine=True)  # Matches 120*37=4440
+        self.norm1 = nn.InstanceNorm1d(120 * 37, affine=True)
         self.norm2 = nn.LayerNorm(128 * 2)
         self.attention_pool = AttentionPooling(hidden_size=128 * 2)
         self.dropout = nn.Dropout(dropout_rate)
@@ -137,14 +137,14 @@ class ImprovedCRNN(nn.Module):
                         nn.init.constant_(param, 0)
 
     def forward(self, x):
-        features = self.conv_layers(x)  # (batch_size, 120, 37, 37)
+        features = self.conv_layers(x)
         batch_size, channels, time, freq = features.size()
         features = features.permute(0, 2, 1, 3).contiguous()
-        features = features.view(batch_size, time, channels * freq)  # (batch_size, 37, 120*37)
+        features = features.view(batch_size, time, channels * freq)
         features = self.norm1(features.transpose(1, 2)).transpose(1, 2)
-        features, _ = self.gru(features)  # (batch_size, 37, 128*2)
+        features, _ = self.gru(features)
         features = self.norm2(features)
         features = self.dropout(features)
-        output = self.attention_pool(features)  # (batch_size, 128*2)
-        output = self.classifier(output)  # (batch_size, num_classes)
+        output = self.attention_pool(features)
+        output = self.classifier(output)
         return output

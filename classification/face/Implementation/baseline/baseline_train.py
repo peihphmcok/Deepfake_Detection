@@ -20,10 +20,9 @@ import random
 
 warnings.filterwarnings('ignore')
 
-from Deepfake_Detection.classification.face.Implementation.advanced_transforms import DeepfakeDataset, train_transform, val_test_transform
-from Deepfake_Detection.classification.face.Implementation.baseline.baseline_models import BASELINE_MODELS
+from classification.face.Implementation.advanced_transforms import DeepfakeDataset, train_transform, val_test_transform
+from classification.face.Implementation.baseline.baseline_models import BASELINE_MODELS
 
-# Set random seed
 def set_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -33,7 +32,6 @@ def set_seed(seed):
 
 set_seed(42)
 
-# Focal Loss implementation
 class FocalLoss(nn.Module):
     def __init__(self, alpha=None, gamma=2.0, reduction='mean'):
         super(FocalLoss, self).__init__()
@@ -55,13 +53,14 @@ class FocalLoss(nn.Module):
         else:
             return focal_loss
 
-# Configuration
+# Project root (4 levels up from baseline/)
+_PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."))
 torch.cuda.empty_cache()
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 
-DATA_PATH = "G:/Hiep/Deepfake_Detection/data_preprocessing/output_split"
-MODEL_PATH = "G:/Hiep/Deepfake_Detection/classification/face/models/model_xception_enhanced"
-OUTPUT_PATH = "G:/Hiep/Deepfake_Detection/classification/face/output/output_xception_enhanced"
+DATA_PATH = os.path.join(_PROJECT_ROOT, "data_preprocessing", "ff_labels")
+MODEL_PATH = os.path.join(_PROJECT_ROOT, "classification", "face", "models", "model_xception_enhanced")
+OUTPUT_PATH = os.path.join(_PROJECT_ROOT, "classification", "face", "output", "output_xception_enhanced")
 BATCH_SIZE = 16
 NUM_WORKERS = 4
 LEARNING_RATE = 2e-4
@@ -287,7 +286,7 @@ def train_model(model_key, model_config, train_loader, val_loader, test_loader):
     }
     best_val_loss = float('inf')
 
-    # Phase 1: Pretrain (freeze all layers except classifier)
+    # Phase 1: pretrain classifier only
     for name, param in model.named_parameters():
         if model_config['classifier_name'] in name:
             param.requires_grad = True
@@ -330,7 +329,7 @@ def train_model(model_key, model_config, train_loader, val_loader, test_loader):
             best_val_loss = val_loss
             torch.save({'model_state_dict': model.state_dict()}, f"{model_save_path}/best_model.pth")
 
-    # Phase 2: Finetune (unfreeze all)
+    # Phase 2: full finetune
     for param in model.parameters():
         param.requires_grad = True
     optimizer = optim.Adam(model.parameters(), lr=FINETUNE_LR, weight_decay=WEIGHT_DECAY)
