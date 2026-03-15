@@ -47,18 +47,3 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 - **Voice training:** run scripts in `classification/voice/Implementation/` (baseline or CRNN).
 - **Multimodal fusion:** use `classification/multimodal/decision_level_fusion.py` and related evaluation scripts.
 
-## Citation
-
-If you use this code in your research, please cite the paper (update with your BibTeX when published):
-
-```bibtex
-@article{yourpaper2025,
-  title={...},
-  author={...},
-  year={2025}
-}
-```
-
-## License
-
-See repository license file.
